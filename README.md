@@ -1,313 +1,292 @@
-# Energy Costs für Home Assistant
+# Energy Costs for Home Assistant
 
 <img src="custom_components/energy_costs/brand/icon.png" alt="Energy Costs" width="96" height="96">
 
-Eine eigenständige Custom Integration für die Stromkosten eines Haushalts.
-Netzbezug und Einspeisung bleiben vollständig getrennt. Keine Abhängigkeit von
-50five, Tibber oder einem bestimmten Zählerhersteller.
+An independent custom integration for household electricity costs. Grid import
+and export are tracked separately, with no dependency on a particular supplier
+or meter manufacturer.
 
-## Einrichtung
+## Requirements
 
-1. Den Ordner `custom_components/energy_costs` nach
-   `/config/custom_components/energy_costs` kopieren.
-2. Home Assistant neu starten.
-3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach
-   **Energy Costs** suchen.
-4. Die Eingaben für deine Zähler und Tarife ausfüllen.
+- Home Assistant **2026.1 or newer**; **2026.3 or newer** to display the bundled icon.
+- A cumulative grid import sensor in Wh or kWh.
+- Optionally, a separate cumulative grid export sensor in Wh or kWh.
+- Recorder long-term energy statistics if you want to import historical readings.
 
-Benötigt Home Assistant 2026.1 oder neuer. Die GitHub-Links im Manifest sind für
-`matzem79/home-assistant-energy-costs` vorbereitet; das Repository wurde noch
-nicht veröffentlicht. Installation zunächst manuell über den Integrationsordner
-oder das mitgelieferte ZIP. Beim Entpacken den enthaltenen Ordner
-`custom_components/energy_costs` vollständig übernehmen, einschließlich `brand/`. In HACS wäre später ein eigener Custom-Repository-
-Eintrag möglich.
+Use cumulative meter readings, such as 1.8.0 for import and 2.8.0 for export.
+Power sensors in W, daily-reset consumption sensors, and net import-minus-export
+sensors are not suitable. PV self-consumption is not grid import. Sources such
+as ESPHome, Shelly, Modbus, or MQTT can be used when they provide suitable sensors.
+
+## Installation with HACS
+
+Energy Costs is prepared for installation as a **HACS custom repository**. It is
+not included in the HACS default catalog. The GitHub repository must first be
+pushed and made **public** before these installation steps can work.
+
+1. Install and configure [HACS](https://www.hacs.dev/) if needed.
+2. Open **HACS** in Home Assistant.
+3. Open the **⋮** menu in the upper-right corner and select **Custom repositories**.
+4. Enter `https://github.com/matzem79/home-assistant-energy-costs`.
+5. Select **Integration** as the repository type and click **Add**.
+6. Find **Energy Costs** in HACS, open it, and download it.
+7. Restart Home Assistant.
+8. Go to **Settings → Devices & services → Add integration**, search for
+   **Energy Costs**, and enter your meters and tariffs.
+
+HACS downloads the files; adding the integration in Home Assistant is a separate
+step. See the [HACS custom repository instructions](https://hacs.dev/docs/faq/custom_repositories/).
+
+### Updates and existing manual installations
+
+Download updates through HACS, then restart Home Assistant. Keep the existing
+Energy Costs configuration entry: deleting and recreating it starts new accounting.
+
+If you installed manually, add this repository to HACS and download the integration
+to let HACS manage the same `custom_components/energy_costs` directory. Restart
+Home Assistant and keep your existing integration entry. HACS does not import
+meter history; that is controlled separately in Energy Costs settings.
+
+### Manual installation without HACS
+
+1. Download a source archive or the manual-install ZIP from a GitHub release.
+2. Copy its entire `custom_components/energy_costs` directory to
+   `/config/custom_components/energy_costs`, including the `brand/` directory.
+3. Restart Home Assistant.
+4. Add **Energy Costs** under **Settings → Devices & services → Add integration**.
+
+The resulting path must include `/config/custom_components/energy_costs/manifest.json`.
+For updates, replace the integration files and restart; keep the existing entry.
+
+## Configuration
+
+| Setting | Meaning |
+| --- | --- |
+| Grid import counter | Cumulative imported energy in Wh or kWh |
+| Grid export counter | Optional separate cumulative exported energy in Wh or kWh |
+| Import price per kWh | Price in the HA currency/kWh, e.g. `0.30` for 30 cents in EUR |
+| Export compensation per kWh | Earned export compensation in the HA currency/kWh |
+| Monthly standing charge | Fixed monthly amount on the import side |
+| Monthly import advance payment | Scheduled monthly payment to the electricity supplier |
+| Monthly export credit received | Scheduled monthly payout from the export provider |
+| Count monthly export credits from | Optional earliest included payout date, independent of the billing-year start |
+| Valid from | Effective date for prices, standing charge, and monthly payment amounts; blank means today |
+| Import billing-year start | Annual billing anchor for grid import |
+| Export billing-year start | Independent annual billing anchor for grid export |
+| Import historical meter data from each billing start | Reconstruct energy from each source's Recorder long-term statistics |
+| Opening import/export balance | Optional balance in money at the initial tracking start |
+
+Import and export must use different source entities. Currency is taken from
+Home Assistant during setup and retained for this entry; there is no currency
+conversion. Negative per-kWh prices are supported. Standing charges and monthly
+payments cannot be negative. The interface includes English and German translations.
+
+## Tariff history and backdated changes
+
+Open **Energy Costs → Configure** to save a dated tariff. Saving the same effective
+date replaces that tariff; other entries remain. The options dialog displays the
+number of saved tariffs and a table of all effective dates and amounts.
+
+- **No effective date:** applies from today at midnight in the HA time zone.
+- **Future date:** the previous tariff applies until that date.
+- **Past date:** recorded daily energy is recalculated using the applicable tariff.
+
+A later tariff is never applied arbitrarily to earlier days. A backdated tariff
+can only reprice energy already recorded or imported. Existing Recorder statistics
+are not rewritten, so current recalculated totals may differ from older graphs.
+
+All monetary values in a tariff share its effective date, including monthly
+payments. When changing only one field, retain the correct values for the other
+fields at that date. Later tariff entries retain their own amounts.
+
+### Historical energy import
+
+Enable **Import historical meter data from each billing start** in the options.
+For example:
+
+1. Set the import billing start to **2026-10-26**.
+2. Set the export billing start to **2026-04-01**.
+3. Enter prices, the standing charge, and monthly payment amounts.
+4. Set **Valid from** to **2026-04-01** if these amounts have been unchanged since
+   then. Import energy and standing charges still start on October 26 in this example.
+5. Enable history import and save. Add further dated tariffs for subsequent changes.
+
+This requires **long-term statistics with an energy sum** for each source. A
+current meter reading or a short state history alone is not enough. Check the
+sources under **Developer tools → Statistics**. Recorder must be available;
+raw state histories and CSV files are not imported directly.
+
+For each direction, existing energy is replaced by a reconstruction beginning at
+its configured start date. The import uses reset-adjusted hourly sum differences
+normalized to kWh and searches up to 31 days before the start for a baseline.
+The remaining interval is bridged to the current raw meter reading. Local day
+boundaries follow the HA time zone. Allocation within intervals is an estimate.
+
+Completed imports are saved and are not repeated on restart or when only prices
+change. Changing a source or billing start triggers a new import. Older imports
+are rebuilt once when upgrading to the corrected importer introduced in 0.2.1.
+Failed or incomplete imports are retried when the integration is reloaded. If no
+usable statistics are available, existing live energy data is retained.
+
+Gaps between cumulative statistics do not by themselves make the known total
+incomplete. Their energy is distributed over time and flagged with
+`distribution_estimated`. A long bridge to the live reading is flagged likewise.
+If no baseline is available before the start, part of the period is missing. If
+an interval spans the billing start, the starting reading is estimated and the
+import remains incomplete. Falling sums or a reset during the live handover also
+make the import incomplete.
+
+Attributes expose the details:
+
+| Attribute/reason | Meaning |
+| --- | --- |
+| `history_import` | Per-direction import status and reconstruction details |
+| `tracking_since` | Actual start of accounting for this direction |
+| `statistics_gaps`, `longest_gap_seconds` | Gaps in the statistics timeline |
+| `estimated_start_boundary` | The meter reading at the billing start was estimated |
+| `missing_start_baseline`, `missing_period_start` | The beginning of the requested period is missing |
+| `decreasing_sum_or_counter_reset` | A falling sum or counter reset occurred during reconstruction/handover |
+| `missing_tariff` | A price or standing-charge tariff is missing for recorded energy/time |
+| `missing_payment_tariff` | No tariff is available for a scheduled payment date |
+| `history_unavailable_or_incomplete` | History import is unavailable or incomplete |
+
+Settlement sensors list reasons in `incomplete_reasons`. `period_complete` or
+`complete` indicates coverage. When a whole billing period is imported, an
+opening balance is not added. For a partial import, any opening balance refers
+to its actual tracking start; review balances entered before enabling history import.
+
+## Sensors
+
+The integration creates 26 sensors on one service device:
+
+- Imported energy: today, month, import billing year, total.
+- Exported energy: today, month, export billing year, total.
+- Import energy costs: today, month, import billing year, total.
+- Earned export compensation: today, month, export billing year, total.
+- Accrued standing charges: today, month, import billing year, total.
+- For each independent billing year: scheduled payments, balance, and status.
+
+**Import cost sensors exclude standing charges**, including the total and
+billing-year sensors. Standing charges have separate sensors. The import balance
+subtracts both energy costs and standing charges from advance payments.
+
+**Total** means since tracking began, including imported history if enabled,
+rather than the physical meter's lifetime total. The first reading establishes
+a baseline. Unavailable readings do not become zero. Counter resets establish a
+new baseline; unknown energy around a reset or meter replacement is not guessed.
+
+Days, months, and billing years follow the HA time zone. A timer updates
+time-dependent values even without meter changes. Energy and balances are stored
+in HA `.storage` independently of entity state. Normal shutdown/unload saves
+explicitly; an abrupt power loss may lose up to five seconds of pending changes.
+
+## Standing charges and scheduled payments
+
+Standing charges accrue over time: the monthly charge is divided by the month's
+calendar days and prorated within the current day. A fully tracked month adds
+exactly one monthly charge, including leap years and daylight-saving changes.
+Charges begin at the import tracking start, including any imported history.
+
+Monthly advances and export payouts are booked **in full**, on the day of the
+month specified by the corresponding billing-year start. A start on April 15
+means payments on the 15th of every month. Dates missing from a month are clamped
+to its last day. A billing year contains at most twelve monthly payments.
+
+Use **Count monthly export credits from** to exclude earlier payouts without
+changing the billing year. For example, a billing start of **2026-01-01**, a
+monthly payout of **EUR 10**, and a payout start of **2026-04-01** result in
+**EUR 80** paid from April through November, rather than EUR 110.
+
+This optional date is a lower bound on the existing payment dates; it does not
+change their day of the month. It is independent of a tariff's effective date.
+Leaving it blank retains the original behavior. It does not change energy,
+earned compensation, or the billing-year start, and does not record a separate
+settlement payment for an earlier invoice.
+
+Settlement sensor attributes include `tariff_count`, `tariffs`, `payment_start`,
+and `payment_schedule`. The schedule lists each included date, amount, and the
+tariff effective date used. Inspect them under **Developer tools → States**.
+
+**Scheduled payments are assumed to have been made.** There is no bank connection,
+missed-payment detection, or individual payment entry.
+
+## Separate balances
+
+```text
+Import balance = opening balance + advance payments − import energy costs − standing charges
+Export balance = opening balance + earned compensation − monthly payouts received
+```
+
+| Balance | Import | Export |
+| --- | --- | --- |
+| Positive | Credit owed to you | Earned compensation still owed to you |
+| Negative | Expected additional payment | Expected repayment of excess payouts |
+| Near zero | Balanced | Balanced |
+
+Balances describe recorded costs/earnings and scheduled payments to date, not a
+forecast of the year-end result. The import and export billing years may start
+on different dates and roll over independently. An opening balance applies only
+to the initial partial billing year and is not carried into the next year; the
+previous year's settlement is assumed to have been handled separately. The
+integration does not make payments.
+
+An opening balance is money, not a meter reading or monthly payment. Without
+historical data or a known opening balance, a partial year is marked incomplete.
+For example, EUR 50 credit when tracking starts means an opening import balance
+of `50`. New costs and payments are added from that point. This does not recreate
+unknown earlier energy consumption.
 
 ## Icon
 
-Ein eigenes Blitz-/Münzsymbol wird mit der Integration unter `brand/` ausgeliefert:
-`icon.png` (256 × 256) und `icon@2x.png` (512 × 512), mit transparenten Ecken.
-Es ist für helle und dunkle Oberflächen geeignet. Home Assistant zeigt lokale
-Brand-Icons **ab Version 2026.3** an; auf 2026.1/2026.2 bleibt die Integration
-nutzbar, das eigene Icon erscheint dort jedoch nicht automatisch.
-Nach einem Update HA neu starten und bei Bedarf die Browseransicht vollständig
-neu laden (am Mac **⌘⇧R**) oder ein privates Browserfenster verwenden.
-Die Integration muss für das Icon-Update **nicht gelöscht** werden. Fehlt das
-Icon weiter, HA-Core-Version und den Pfad
-`/config/custom_components/energy_costs/brand/icon.png` prüfen.
-Die Iconanzeige wurde nach manueller Installation in HA bestätigt.
+The integration bundles `brand/icon.png` (256 × 256) and `brand/icon@2x.png`
+(512 × 512), suitable for light and dark interfaces. Local brand images require
+**HA 2026.3 or newer**; earlier supported versions can run the integration but do
+not automatically display the bundled icon.
 
-Die bearbeitbare Vektorquelle liegt unter [docs/icon.svg](docs/icon.svg).
-Mit `python3 scripts/build_brand.py` werden SVG und PNGs ohne Zusatzpakete aus
-denselben Formen erzeugt. Sie stehen wie der Code unter der MIT-Lizenz.
-Siehe [HA-Dokumentation für Brand-Icons](https://contributors.home-assistant.io/core/integrations/brands/).
+After updating, restart HA and fully reload the browser (macOS: **⌘⇧R**) or try a
+private window. Do not delete the integration to update its icon. Check
+`/config/custom_components/energy_costs/brand/icon.png` if the icon is missing.
+Icon display has been confirmed after a manual HA installation.
 
-## Konfiguration
+The vector source is [docs/icon.svg](docs/icon.svg). Run
+`python3 scripts/build_brand.py` to regenerate the SVG and PNGs without additional
+packages. Code and artwork are covered by the [MIT license](LICENSE).
+See [Home Assistant brand image documentation](https://contributors.home-assistant.io/core/integrations/brands/).
 
-| Eingabe | Bedeutung |
-| --- | --- |
-| Zähler Netzbezug | Kumulativer Energiezähler in Wh oder kWh, z. B. Netzbezug/1.8.0 |
-| Zähler Einspeisung | Separater kumulativer Zähler in Wh oder kWh, z. B. Einspeisung/2.8.0; optional ohne Einspeisung |
-| Bezugspreis je kWh | Preis in HA-Währung/kWh, z. B. `0.30` für 30 ct bei EUR |
-| Einspeisevergütung je kWh | Vergütung in HA-Währung/kWh, z. B. `0.08` für 8 ct |
-| Monatliche Grundgebühr | Fester monatlicher Betrag, nur auf der Bezugsseite |
-| Monatlicher Abschlag Netzbezug | Planmäßige monatliche Zahlung an den Stromlieferanten |
-| Monatliche Gutschrift Einspeisung | Planmäßige monatliche Auszahlung vom Netzbetreiber/Vergüter |
-| Monatliche Einspeisegutschriften zählen ab | Optional: frühester berücksichtigter monatlicher Auszahlungstermin, unabhängig vom Abrechnungsjahr |
-| Gültig ab | Optionales Datum für diese Preise, Grundgebühr und Monatszahlungen; leer bedeutet heute |
-| Beginn Abrechnungsjahr Bezug | Eigener jährlicher Abrechnungsbeginn für den Liefervertrag |
-| Beginn Abrechnungsjahr Einspeisung | Eigener jährlicher Abrechnungsbeginn für die Einspeiseabrechnung |
-| Historische Zählerdaten ab Abrechnungsbeginn importieren | Optional: Langzeitstatistiken beider Quellen ab ihrem jeweiligen Startdatum übernehmen |
-| Anfangssaldo Bezug/Einspeisung | Optional: bereits bekannter Saldo zum Zeitpunkt des erstmaligen Erfassungsbeginns |
+## Accuracy and limitations
 
-Die beiden Zähler dürfen nicht dieselbe Entität sein. Benötigt werden echte
-Zählersummen, keine Leistungswerte in W, kein täglich zurückgesetzter Verbrauch
-und kein saldierender Bezug-minus-Einspeisung-Zähler. PV-Eigenverbrauch gehört
-nicht zum Netzbezug. ESPHome, Shelly, Modbus oder MQTT sind als Quellen geeignet,
-wenn sie passende HA-Sensoren bereitstellen. Keine der Hardwarevarianten wurde
-mit dieser neuen Integration bisher live geprüft.
+Energy between changing readings is distributed over local days in proportion
+to elapsed time. Sparse updates spanning midnight therefore introduce estimates.
+Frequent cumulative readings improve time allocation. Missing tariff coverage is
+reported through `unpriced_energy_kwh` or `unpriced_days` and `cost_complete`.
+Settlement attributes also include `actual`, `advances`, `opening_balance`, and
+`cycle_start`.
 
-## Preisänderungen und Tarifverlauf
+A supplier may use different rounding, dates, payment plans, or billing rules.
+This is an ongoing overview, not an official bill. The integration does not
+change source entities or perform transfers or physical actions.
 
-**Energy Costs → Konfigurieren** öffnet die Eingaben erneut. Neue Werte und ein
-optionales Datum speichern einen weiteren Eintrag im Tarifverlauf. Ein Eintrag
-am gleichen Gültigkeitsdatum wird ersetzt; andere Einträge bleiben erhalten.
-Im Konfigurationsdialog stehen Anzahl und Tabelle aller gespeicherten Tarife
-mit Gültigkeitsdatum und sämtlichen Preisen/Monatsbeträgen.
+## Development and publishing
 
-- Ohne Datum: gültig ab heute, **00:00 Uhr** in der HA-Zeitzone.
-- Zukünftiges Datum: Die bisherigen Preise gelten bis einschließlich Vortag.
-- Rückwirkendes Datum: Die gespeicherten täglichen Energiemengen werden ab
-  diesem Datum mit den neuen Preisen neu bewertet.
-
-Es erfolgt keine Umrechnung historischer Tage mit einem beliebig späteren
-Tarif. Ein rückdatierter Preis kann aber nur bereits **erfasste** Energiemengen
-neu bewerten. Mit dem optionalen Historienimport können frühere Zählerdaten aus
-den Recorder-Langzeitstatistiken übernommen werden. Frühere Recorder-Statistiken werden nicht umgeschrieben; die neu
-berechneten aktuellen Perioden-/Gesamtwerte können deshalb von alten Graphen
-abweichen.
-
-Alle Angaben eines Tarifeintrags teilen sich das Gültigkeitsdatum, einschließlich
-Monatsabschlag und Einspeisegutschrift. Die Währung wird beim Einrichten aus HA
-übernommen und bleibt für diesen Eintrag erhalten; keine automatische Währungs-
-umrechnung. Negative kWh-Preise sind möglich, negative Grundgebühren oder
-Monatszahlungen nicht.
-
-### Rückwirkender Einstieg mit historischen Zählerdaten
-
-Ab Version 0.2.0 kann unter **Konfigurieren** die Option **Historische Zählerdaten
-ab Abrechnungsbeginn importieren** aktiviert werden. Beispiel:
-
-1. Beginn Abrechnungsjahr Bezug: **26.10.2026**.
-2. Beginn Abrechnungsjahr Einspeisung: **01.04.2026**.
-3. Bezugspreis, Einspeisevergütung, Grundgebühr und Monatszahlungen eintragen.
-4. **Gültig ab: 01.04.2026**, wenn diese Werte seitdem unverändert gelten.
-   Bezugskosten und Grundgebühr beginnen trotzdem erst am 26.10.2026.
-   Bei zwischenzeitlichen Änderungen weitere Tarife mit dem jeweiligen Datum speichern.
-5. Historienimport aktivieren und speichern.
-
-Voraussetzung sind **Langzeitstatistiken mit einer Energiesumme** für die
-gewählten Entitäten. Ein aktueller Zählerstand oder ein sichtbarer kurzer
-Zustandsverlauf allein reicht nicht. Unter **Entwicklerwerkzeuge → Statistik**
-lässt sich prüfen, ob die Quellen Statistikdaten führen. Recorder muss aktiv
-sein; reine Zustandsverläufe ohne Langzeitstatistiken werden nicht importiert.
-
-Pro Richtung werden die gespeicherten Energiemengen durch die Rekonstruktion ab
-dem eingetragenen Startdatum ersetzt. Der Import verwendet stündliche,
-resetbereinigte Summendifferenzen in kWh; ein Wert aus der Stunde vor dem
-Startdatum dient als Ausgangsbasis. Der Rest bis zum aktuellen Zählerstand wird
-ergänzt. Für den Ausgangswert werden bis zu 31 Tage vor dem Start durchsucht.
-Tagesgrenzen werden in der HA-Zeitzone berücksichtigt. Stundenwerte und
-der Übergang zum aktuellen Stand sind zeitliche Näherungen.
-
-Ein erfolgreicher vollständiger Import wird gespeichert und bei Neustarts oder
-reinen Preisänderungen nicht wiederholt. Änderungen an Quelle oder Startdatum
-lösen einen neuen Import aus. Beim Update auf 0.2.1 werden ältere Importe einmalig neu berechnet.
-Fehlgeschlagene oder unvollständige Importe werden
-beim erneuten Laden erneut versucht. Ohne nutzbare Statistik bleibt die bisherige
-Live-Erfassung erhalten. Abstände zwischen kumulativen Statistikwerten allein
-machen die bekannte Gesamtmenge nicht unvollständig: Sie wird zeitanteilig
-verteilt und mit `distribution_estimated` gekennzeichnet. Auch ein langer
-Übergang zum aktuellen Zählerstand wird so ausgewiesen.
-
-Fehlt ein Ausgangswert vor dem Start, fehlt ein Teil des Zeitraums. Liegt ein
-Wertepaar über dem Abrechnungsbeginn, wird dessen Menge anteilig aufgeteilt;
-der Anfangsstand ist dann geschätzt. In beiden Fällen bleibt der Import als
-unvollständig markiert. Ein Rücksprung beim Übergang zum Live-Zähler oder eine
-fallende Statistiksumme führen ebenfalls zu dieser Markierung. `statistics_gaps`
-und `longest_gap_seconds` beschreiben die zeitliche Auflösung. Das Attribut
-`incomplete_reasons` erklärt den Status der Abrechnung:
-
-- `estimated_start_boundary`: Anfangsstand am Abrechnungsbeginn geschätzt.
-- `missing_start_baseline` / `missing_period_start`: Anfang des Zeitraums fehlt.
-- `decreasing_sum_or_counter_reset`: Fallende Summe bzw. Rücksprung beim Live-Übergang.
-- `missing_tariff`: Preis oder Grundgebühr für erfasste Mengen/Zeiten fehlt.
-- `missing_payment_tariff`: Tarif für einen planmäßigen Zahlungstermin fehlt.
-- `history_unavailable_or_incomplete`: Historienimport nicht verfügbar oder fehlgeschlagen.
-
-Die Attribute `history_import`, `tracking_since` und
-`period_complete` bzw. `complete` zeigen den Stand getrennt je Richtung.
-
-Bei vollständig importiertem Abrechnungszeitraum wird kein Anfangssaldo
-angerechnet. Grundgebühr und planmäßige Monatszahlungen werden dann ebenfalls
-ab dem jeweiligen Erfassungsbeginn rückwirkend berechnet. Bei einem Teilimport
-bezieht sich ein etwaiger Anfangssaldo auf dessen tatsächlichen Erfassungsbeginn;
-einen zuvor für die Live-Einrichtung eingetragenen Saldo entsprechend prüfen.
-
-## Sensoren
-
-Es werden 26 Sensoren an einem gemeinsamen Gerät angelegt:
-
-- Netzbezug in kWh: heute, Monat, Bezugs-Abrechnungsjahr, gesamt.
-- Einspeisung in kWh: heute, Monat, Einspeise-Abrechnungsjahr, gesamt.
-- Bezugskosten: heute, Monat, Bezugs-Abrechnungsjahr, gesamt.
-- Einspeisevergütung: heute, Monat, Einspeise-Abrechnungsjahr, gesamt.
-- Aufgelaufene Grundgebühr: heute, Monat, Bezugs-Abrechnungsjahr, gesamt.
-- Jeweils bezogen auf das eigene Abrechnungsjahr: Abschläge/Gutschriften,
-  Saldo und Abrechnungsstatus für Bezug und Einspeisung.
-
-**Bezugskosten enthalten nur die Energiepreise** (Netzbezug × kWh-Preis),
-auch bei „gesamt“ und „Abrechnungsjahr“. Die Grundgebühr steht separat in den
-Sensoren „Aufgelaufene Grundgebühr“. Im Bezugssaldo werden Bezugskosten und
-Grundgebühr gemeinsam von den Abschlägen abgezogen.
-
-**Gesamt** bedeutet seit Erfassungsbeginn, nicht der historische Lebenszeitwert
-des physischen Zählers. Der erste Zählerstand ist die Ausgangsbasis und wird
-nicht als neuer Verbrauch berechnet. Unverfügbare Werte werden nicht zu null.
-Bei einem Rücksprung wird eine neue Zählerbasis gesetzt; unbekannte Energie
-während eines Zählerwechsels/Resets wird nicht geschätzt.
-
-Tages-/Monatswechsel sowie Jahresabrechnungswechsel berücksichtigen die
-HA-Zeitzone. Ein Timer aktualisiert zeitabhängige Werte auch ohne Zählerimpuls.
-Kontostände und Energiemengen werden getrennt von der Entitätsanzeige in HA
-`.storage` gespeichert und nach Neustarts wiederhergestellt. Normaler Neustart
-und Entladen speichern explizit; bei abruptem Stromausfall können bis zu fünf
-Sekunden noch nicht geschriebene Daten fehlen.
-
-## Grundgebühr und planmäßige Monatszahlungen
-
-Die Grundgebühr läuft **zeitanteilig** auf: Monatsbetrag geteilt durch die
-Kalendertage des Monats und anteilig für den aktuellen Tag. Ein vollständig
-erfasster Monat ergibt genau den Monatsbetrag, auch im Februar/Schaltjahr oder
-bei einer Zeitumstellung. Nach erstmaliger Einrichtung fallen Grundgebühren
-nur ab diesem Zeitpunkt an.
-
-Abschläge und Einspeisegutschriften werden dagegen **als voller Monatsbetrag**
-gebucht, jeweils am Monatstag des zugehörigen Abrechnungsbeginns. Beispiel:
-Beginn am 15. April → planmäßige Zahlungen am 15. jedes Monats. Bei einem Tag,
-den der Monat nicht hat, wird der letzte Monatstag verwendet. Die Jahressumme
-umfasst maximal zwölf Monatszahlungen.
-
-Mit **Monatliche Einspeisegutschriften zählen ab** lässt sich die erste
-berücksichtigte Auszahlung unabhängig vom Abrechnungsjahr begrenzen. Beispiel:
-Abrechnungsbeginn **01.01.2026**, Monatsgutschrift **10 EUR**, Zahlungen zählen ab
-**01.04.2026** → bis einschließlich November **80 EUR** statt 110 EUR.
-Tarife vor April können dabei unverändert bleiben. Das Datum ist eine Untergrenze
-für die bisherigen Zahlungstermine; es verschiebt deren Monatstag nicht.
-Es gilt unabhängig vom „Gültig ab“-Datum des neu gespeicherten Tarifeintrags.
-Leer bedeutet das bisherige Verhalten. Das Feld verändert weder Energiemengen
-noch die verdiente Vergütung oder den Abrechnungsbeginn. Eine bereits erfolgte
-Zwischenabrechnung wird damit nicht als separate Zahlung verbucht.
-
-Die Abrechnungssensoren zeigen zusätzlich `tariff_count`, `tariffs`,
-`payment_start` und `payment_schedule`. Letzteres listet jeden angesetzten
-Monatstermin mit Betrag und dem dafür verwendeten Tarifdatum. Sichtbar unter
-**Entwicklerwerkzeuge → Zustände** beim jeweiligen Abrechnungssensor.
-
-**Es wird angenommen, dass diese Zahlungen tatsächlich erfolgen.** Keine
-Bankanbindung, keine Erkennung ausgefallener Überweisungen und keine Eingabe
-einzelner Sonderzahlungen. Der Sensorwert ist eine Berechnung nach Zahlungsplan.
-
-## Zwei getrennte Salden
-
-```text
-Bezugssaldo = Anfangssaldo + gezahlte Abschläge − Bezugskosten − Grundgebühr
-Einspeisesaldo = Anfangssaldo + verdiente Einspeisevergütung − ausgezahlte Monatsgutschriften
-```
-
-| Saldo | Bezug | Einspeisung |
-| --- | --- | --- |
-| Positiv | Guthaben für dich | Noch auszuzahlende Gutschrift für dich |
-| Negativ | Voraussichtliche Nachzahlung | Voraussichtliche Rückzahlung überzahlter Gutschriften |
-| Nahe null | Ausgeglichen | Ausgeglichen |
-
-Der jeweilige Status benennt das Ergebnis. Die Integration prognostiziert keinen
-künftigen Verbrauch: Der Saldo gilt für bisher erfasste Kosten/Vergütungen und
-bis heute planmäßig gezahlte Beträge, nicht als Jahresendprognose.
-
-Die beiden Abrechnungsjahre können unabhängig beginnen, z. B. Bezug am 1. April
-und Einspeisung am 1. Januar. Sie wechseln jährlich automatisch. Ein Anfangssaldo
-gilt nur für das erste, bereits laufende Abrechnungsjahr. Er wird nach dem
-Jahreswechsel nicht weitergetragen: Die Vorjahresabrechnung wird als separat
-verrechnet angenommen. Die Integration führt keine Zahlung aus.
-
-### Einstieg während eines laufenden Abrechnungsjahres
-
-Ohne Anfangssaldo fehlen die vorherigen Kosten und Zahlungen. Der Zahlenwert
-zeigt dann nur den bekannten Teil, und der Status lautet **Zeitraum unvollständig**.
-Bei vorhandenem Anfangssaldo werden frühere Zahlungen nicht nochmals addiert;
-es zählen nur Zahlungszeitpunkte ab dem Erfassungsbeginn. Das Vorzeichen ist
-für beide Anfangssalden aus deiner Sicht: Guthaben positiv, Schuld negativ.
-
-Beispiel: Bei Beginn der Erfassung hast du auf der Bezugsseite 50 EUR Guthaben.
-`Anfangssaldo Bezug = 50`. Ab jetzt kommen neue Abschläge hinzu und neue Kosten
-gehen ab. Dies rekonstruiert keinen früheren Bruttoverbrauch; die alten
-Energiemengen und Kosten bleiben in den Verbrauchssensoren unbekannt.
-
-## Genauigkeit und Grenzen
-
-Zwischen zwei unterschiedlichen Zählerständen wird die Energiemenge zeitanteilig
-auf lokale Tage aufgeteilt. Späte/seltener gelieferte Werte über Mitternacht
-sind deshalb eine Schätzung; schnelle kumulative Zählerupdates verbessern die
-Genauigkeit. Fehlende Preiszeiträume werden über `unpriced_energy_kwh` bzw.
-`unpriced_days` und `cost_complete: false` sichtbar. `period_complete` zeigt,
-ob der gesamte betrachtete Zeitabschnitt seit seinem Beginn erfasst wurde.
-Abrechnungssensoren haben zusätzlich `complete`, `cycle_start` und die getrennten
-Beträge `actual`, `advances`, `opening_balance` als Attribute.
-
-Ein Stromlieferant kann andere Rundungen, Stichtage, Abschlagspläne oder
-Abrechnungsregeln verwenden. Das ist eine laufende Übersicht, keine verbindliche
-Rechnung. Die Integration verändert keine Quellentitäten und führt keine
-Überweisungen oder physischen Aktionen aus.
-
-## Tests und Projektstand
+Current integration version: **0.2.3**.
 
 ```sh
 python3 -m unittest discover -s tests -v
-```
-
-67 lokale Tests erfolgreich: Einheiten, Bezug/Einspeisung, Tarifänderungen,
-Rückdatierung, Grundgebühr, Monats-/Jahresgrenzen, Schaltjahr/Zeitumstellung,
-Neustart, Zählerreset, getrennte Abrechnungsjahre, Abschläge, Saldenvorzeichen,
-Anfangssaldo sowie Aufbau und Speichern der Konfigurationsdialoge, Historienimport,
-Statistiklücken, Übergang zur Live-Erfassung und Import-Persistenz ohne Doppelzählung.
-Die HA-Grenzen sind in den Tests durch kleine Testdoubles ersetzt. Erste manuelle
-Rückmeldungen aus HA liegen vor; ein vollständiger HA-/hassfest-Lauf steht aus.
-
-Das Projekt liegt unter `AI/energy-costs`. Es ist ein eigenes Projekt und gehört nicht zum
-50five-Fork. Keine Zugangsdaten enthalten, keine GitHub-Veröffentlichung erfolgt.
-
-## Entwicklung und Veröffentlichung
-
-Code und eigenes Icon stehen unter der [MIT-Lizenz](LICENSE).
-Der aktuelle Stand ist **0.2.3**. Die GitHub-Actions führen die lokalen Tests bei
-Push und Pull Request aus. Ein gepushter Versionstag erstellt einen
-Release-Entwurf mit Installations-ZIP.
-
-[Veröffentlichungsanleitung](docs/PUBLISHING.md): lokale Prüfungen,
-ZIP-Erstellung, HTTPS-Anmeldung, Anlegen des neuen GitHub-Repositories,
-erster Push und Release. `origin` ist auf
-`https://github.com/matzem79/home-assistant-energy-costs.git` eingerichtet und
-nutzt die vorhandene GitHub-CLI-Anmeldung. Das Zielrepository muss vor dem
-ersten Push noch auf GitHub angelegt werden; ein Push erstellt es nicht selbst.
-Die lokale Vorbereitung veröffentlicht nichts auf GitHub.
-
-```sh
 python3 scripts/build_release.py
 ```
 
-Erstellt `dist/energy-costs-0.2.3.zip` mit Integration, Icon und Dokumentation.
+67 isolated tests cover meters, units, tariffs, historical import, persistence,
+calendar boundaries, standing charges, independent billing years, balances,
+payment dates, configuration flows, and sensor attributes. They use HA boundary
+doubles; a full HA/hassfest run and a live HACS installation remain outstanding.
+Manual HA feedback is available, including confirmation of the icon.
 
-Referenzen:
-[HA Config Flow](https://developers.home-assistant.io/docs/config_entries_config_flow_handler/),
-[HA Options Flow](https://developers.home-assistant.io/docs/config_entries_options_flow_handler/),
-[HA Sensoren](https://developers.home-assistant.io/docs/core/entity/sensor/).
+The ZIP builder writes `dist/energy-costs-0.2.3.zip`. GitHub Actions run tests and
+build the package on pushes and pull requests. A version tag creates a **draft**
+GitHub release with the manual-install ZIP. HACS installs the integration from
+the repository/tag layout, not from that ZIP.
+
+See [Publishing to GitHub and HACS](docs/PUBLISHING.md) for authentication,
+creating the public repository, the first push, and releasing a version.
+Repository preparation does not itself publish to GitHub or add the project to
+the HACS default catalog.
