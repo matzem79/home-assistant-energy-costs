@@ -1,0 +1,157 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Stromkosten und Tarife",
+        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert.",
+        "data": {
+          "import_entity": "Zähler Netzbezug",
+          "export_entity": "Zähler Einspeisung (optional)",
+          "import_price": "Bezugspreis je kWh",
+          "export_price": "Einspeisevergütung je kWh",
+          "monthly_fee": "Monatliche Grundgebühr",
+          "valid_from": "Gültig ab (optional, sonst heute)",
+          "monthly_import_payment": "Monatlicher Abschlag Netzbezug",
+          "monthly_export_credit": "Monatliche Gutschrift Einspeisung",
+          "import_billing_start": "Beginn Abrechnungsjahr Bezug",
+          "export_billing_start": "Beginn Abrechnungsjahr Einspeisung",
+          "import_opening_balance": "Anfangssaldo Bezug bei Erfassungsbeginn (optional)",
+          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_source": "Kumulativen Zähler mit Wh/kWh wählen.",
+      "same_source": "Bezug und Einspeisung benötigen unterschiedliche Zähler.",
+      "invalid_price": "Gültigen Preis angeben; die Grundgebühr darf nicht negativ sein.",
+      "invalid_date": "Gültiges Datum angeben."
+    },
+    "abort": {
+      "already_configured": "Diese Zähler sind bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Stromkosten und Tarife",
+        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert.",
+        "data": {
+          "import_entity": "Zähler Netzbezug",
+          "export_entity": "Zähler Einspeisung (optional)",
+          "import_price": "Bezugspreis je kWh",
+          "export_price": "Einspeisevergütung je kWh",
+          "monthly_fee": "Monatliche Grundgebühr",
+          "valid_from": "Gültig ab (optional, sonst heute)",
+          "monthly_import_payment": "Monatlicher Abschlag Netzbezug",
+          "monthly_export_credit": "Monatliche Gutschrift Einspeisung",
+          "import_billing_start": "Beginn Abrechnungsjahr Bezug",
+          "export_billing_start": "Beginn Abrechnungsjahr Einspeisung",
+          "import_opening_balance": "Anfangssaldo Bezug bei Erfassungsbeginn (optional)",
+          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_source": "Kumulativen Zähler mit Wh/kWh wählen.",
+      "same_source": "Bezug und Einspeisung benötigen unterschiedliche Zähler.",
+      "invalid_price": "Gültigen Preis angeben; die Grundgebühr darf nicht negativ sein.",
+      "invalid_date": "Gültiges Datum angeben."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "import_energy_day": {
+        "name": "Netzbezug heute"
+      },
+      "import_energy_month": {
+        "name": "Netzbezug Monat"
+      },
+      "import_energy_total": {
+        "name": "Netzbezug gesamt"
+      },
+      "export_energy_day": {
+        "name": "Einspeisung heute"
+      },
+      "export_energy_month": {
+        "name": "Einspeisung Monat"
+      },
+      "export_energy_total": {
+        "name": "Einspeisung gesamt"
+      },
+      "import_cost_day": {
+        "name": "Bezugskosten heute"
+      },
+      "import_cost_month": {
+        "name": "Bezugskosten Monat"
+      },
+      "import_cost_total": {
+        "name": "Bezugskosten gesamt"
+      },
+      "export_revenue_day": {
+        "name": "Einspeisevergütung heute"
+      },
+      "export_revenue_month": {
+        "name": "Einspeisevergütung Monat"
+      },
+      "export_revenue_total": {
+        "name": "Einspeisevergütung gesamt"
+      },
+      "standing_charge_day": {
+        "name": "Grundgebühr heute"
+      },
+      "standing_charge_month": {
+        "name": "Grundgebühr Monat"
+      },
+      "standing_charge_total": {
+        "name": "Grundgebühr gesamt"
+      },
+      "import_energy_year": {
+        "name": "Netzbezug Abrechnungsjahr"
+      },
+      "export_energy_year": {
+        "name": "Einspeisung Abrechnungsjahr"
+      },
+      "import_cost_year": {
+        "name": "Bezugskosten Abrechnungsjahr"
+      },
+      "export_revenue_year": {
+        "name": "Einspeisevergütung Abrechnungsjahr"
+      },
+      "standing_charge_year": {
+        "name": "Grundgebühr Abrechnungsjahr"
+      },
+      "import_advances_year": {
+        "name": "Abschläge Bezug Abrechnungsjahr"
+      },
+      "import_balance_year": {
+        "name": "Saldo Bezug"
+      },
+      "import_status_year": {
+        "name": "Abrechnung Bezug",
+        "state": {
+          "credit": "Guthaben",
+          "additional_payment": "Nachzahlung",
+          "repayment": "Rückzahlung",
+          "balanced": "Ausgeglichen",
+          "incomplete": "Zeitraum unvollständig"
+        }
+      },
+      "export_advances_year": {
+        "name": "Ausgezahlte Einspeisegutschriften Abrechnungsjahr"
+      },
+      "export_balance_year": {
+        "name": "Saldo Einspeisung"
+      },
+      "export_status_year": {
+        "name": "Abrechnung Einspeisung",
+        "state": {
+          "credit": "Guthaben",
+          "additional_payment": "Nachzahlung",
+          "repayment": "Rückzahlung",
+          "balanced": "Ausgeglichen",
+          "incomplete": "Zeitraum unvollständig"
+        }
+      }
+    }
+  }
+}

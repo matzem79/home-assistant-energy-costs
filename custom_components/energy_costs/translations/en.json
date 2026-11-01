@@ -1,0 +1,157 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Energy costs and tariffs",
+        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete.",
+        "data": {
+          "import_entity": "Grid import counter",
+          "export_entity": "Grid export counter (optional)",
+          "import_price": "Import price per kWh",
+          "export_price": "Export compensation per kWh",
+          "monthly_fee": "Monthly standing charge",
+          "valid_from": "Valid from (optional, today if empty)",
+          "monthly_import_payment": "Monthly import advance payment",
+          "monthly_export_credit": "Monthly export credit received",
+          "import_billing_start": "Import billing-year start",
+          "export_billing_start": "Export billing-year start",
+          "import_opening_balance": "Opening import balance at tracking start (optional)",
+          "export_opening_balance": "Opening export balance at tracking start (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_source": "Choose a cumulative energy counter in Wh/kWh.",
+      "same_source": "Import and export must use different counters.",
+      "invalid_price": "Enter a finite price; the standing charge cannot be negative.",
+      "invalid_date": "Enter a valid date."
+    },
+    "abort": {
+      "already_configured": "These meters are already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Energy costs and tariffs",
+        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete.",
+        "data": {
+          "import_entity": "Grid import counter",
+          "export_entity": "Grid export counter (optional)",
+          "import_price": "Import price per kWh",
+          "export_price": "Export compensation per kWh",
+          "monthly_fee": "Monthly standing charge",
+          "valid_from": "Valid from (optional, today if empty)",
+          "monthly_import_payment": "Monthly import advance payment",
+          "monthly_export_credit": "Monthly export credit received",
+          "import_billing_start": "Import billing-year start",
+          "export_billing_start": "Export billing-year start",
+          "import_opening_balance": "Opening import balance at tracking start (optional)",
+          "export_opening_balance": "Opening export balance at tracking start (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_source": "Choose a cumulative energy counter in Wh/kWh.",
+      "same_source": "Import and export must use different counters.",
+      "invalid_price": "Enter a finite price; the standing charge cannot be negative.",
+      "invalid_date": "Enter a valid date."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "import_energy_day": {
+        "name": "Grid import today"
+      },
+      "import_energy_month": {
+        "name": "Grid import this month"
+      },
+      "import_energy_total": {
+        "name": "Grid import total"
+      },
+      "export_energy_day": {
+        "name": "Grid export today"
+      },
+      "export_energy_month": {
+        "name": "Grid export this month"
+      },
+      "export_energy_total": {
+        "name": "Grid export total"
+      },
+      "import_cost_day": {
+        "name": "Import cost today"
+      },
+      "import_cost_month": {
+        "name": "Import cost this month"
+      },
+      "import_cost_total": {
+        "name": "Import cost total"
+      },
+      "export_revenue_day": {
+        "name": "Export revenue today"
+      },
+      "export_revenue_month": {
+        "name": "Export revenue this month"
+      },
+      "export_revenue_total": {
+        "name": "Export revenue total"
+      },
+      "standing_charge_day": {
+        "name": "Standing charge today"
+      },
+      "standing_charge_month": {
+        "name": "Standing charge this month"
+      },
+      "standing_charge_total": {
+        "name": "Standing charge total"
+      },
+      "import_energy_year": {
+        "name": "Grid import billing year"
+      },
+      "export_energy_year": {
+        "name": "Grid export billing year"
+      },
+      "import_cost_year": {
+        "name": "Import cost billing year"
+      },
+      "export_revenue_year": {
+        "name": "Export revenue billing year"
+      },
+      "standing_charge_year": {
+        "name": "Standing charge billing year"
+      },
+      "import_advances_year": {
+        "name": "Import advances this billing year"
+      },
+      "import_balance_year": {
+        "name": "Import balance"
+      },
+      "import_status_year": {
+        "name": "Import settlement",
+        "state": {
+          "credit": "Credit",
+          "additional_payment": "Additional payment",
+          "repayment": "Repayment",
+          "balanced": "Balanced",
+          "incomplete": "Incomplete period"
+        }
+      },
+      "export_advances_year": {
+        "name": "Export credits received this billing year"
+      },
+      "export_balance_year": {
+        "name": "Export balance"
+      },
+      "export_status_year": {
+        "name": "Export settlement",
+        "state": {
+          "credit": "Credit",
+          "additional_payment": "Additional payment",
+          "repayment": "Repayment",
+          "balanced": "Balanced",
+          "incomplete": "Incomplete period"
+        }
+      }
+    }
+  }
+}
