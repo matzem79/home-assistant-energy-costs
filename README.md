@@ -294,8 +294,12 @@ Push und Pull Request aus. Ein gepushter Versionstag erstellt einen
 Release-Entwurf mit Installations-ZIP.
 
 [Veröffentlichungsanleitung](docs/PUBLISHING.md): lokale Prüfungen,
-ZIP-Erstellung, erster GitHub-Push und Release. Als Git-Remote ist `git@github.com:matzem79/home-assistant-energy-costs.git`
-vorgesehen. Die lokale Vorbereitung veröffentlicht nichts auf GitHub.
+ZIP-Erstellung, HTTPS-Anmeldung, Anlegen des neuen GitHub-Repositories,
+erster Push und Release. `origin` ist auf
+`https://github.com/matzem79/home-assistant-energy-costs.git` eingerichtet und
+nutzt die vorhandene GitHub-CLI-Anmeldung. Das Zielrepository muss vor dem
+ersten Push noch auf GitHub angelegt werden; ein Push erstellt es nicht selbst.
+Die lokale Vorbereitung veröffentlicht nichts auf GitHub.
 
 ```sh
 python3 scripts/build_release.py

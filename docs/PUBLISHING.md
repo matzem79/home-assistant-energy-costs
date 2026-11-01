@@ -1,8 +1,8 @@
 # GitHub-Veröffentlichung
 
 Vorgesehenes Repository: `matzem79/home-assistant-energy-costs`.
-Der Stand 0.2.3 ist lokal vorbereitet. Als `origin` ist
-`git@github.com:matzem79/home-assistant-energy-costs.git` vorgesehen.
+Der Stand 0.2.3 ist lokal vorbereitet. `origin` ist auf HTTPS eingerichtet:
+`https://github.com/matzem79/home-assistant-energy-costs.git`.
 Diese Vorbereitung erstellt weder ein GitHub-Repository noch einen Release.
 Quellcode und eigenes Icon stehen unter der MIT-Lizenz in `LICENSE`.
 
@@ -28,33 +28,75 @@ Einrichtung, Optionen, Neustart, Historienimport und Iconanzeige in HA prüfen.
 Lokale Brand-Icons benötigen HA 2026.3 oder neuer; die übrige Integration setzt
 HA 2026.1 oder neuer voraus.
 
-## Ersten Push ausführen
+## Anmeldung und aktueller Stand
 
-Der vorbereitete Stand ist lokal committed. Vor dem Push Remote und Status prüfen:
+- Branch: `main`, Änderungen lokal committed.
+- GitHub-Konto: `matzem79`; die GitHub CLI war bei der letzten Prüfung gültig angemeldet.
+- Der SSH-Push scheiterte mit `Permission denied (publickey)`.
+- `origin` wurde deshalb auf HTTPS umgestellt. Dieses lokale Repository verwendet
+  die GitHub CLI als Credential-Helper; Tokens stehen nicht in Remote-URL oder Dateien.
+- Das Zielrepository war bei der letzten Prüfung unter diesem Konto nicht auffindbar.
+- Noch kein erfolgreicher Push, kein Versionstag und kein GitHub-Release.
+
+Alle folgenden Befehle im lokalen Projektordner `energy-costs` ausführen.
+Zuerst prüfen:
 
 ```sh
+gh auth status
 git remote -v
 git status --short
 git log -1 --oneline
 ```
 
-Wenn das Zielrepository noch nicht existiert, kann es mit GitHub CLI angelegt
-werden. Der folgende Befehl legt es **öffentlich** an. `origin` ist lokal bereits
-vorbereitet und wird dabei nicht erneut angelegt:
+Falls die Anmeldung fehlt oder abgelaufen ist:
 
 ```sh
-gh repo create matzem79/home-assistant-energy-costs --public --description "Independent import and export electricity cost accounting for Home Assistant"
+gh auth login --hostname github.com --git-protocol https --web
+```
+
+Auf einem weiteren Rechner lassen sich HTTPS-Remote und der Credential-Helper
+für dieses Repository so einrichten (auf dem vorbereiteten Rechner bereits erledigt):
+
+```sh
+git remote set-url origin https://github.com/matzem79/home-assistant-energy-costs.git
+git config --local --replace-all credential.https://github.com.helper ''
+git config --local --add credential.https://github.com.helper '!gh auth git-credential'
+```
+
+## Neues GitHub-Repository anlegen und erster Push
+
+Der fehlende Schritt vor dem ersten Push ist das Anlegen des Zielrepositories.
+Zunächst **privat** anlegen; die Sichtbarkeit kann später in GitHub geändert werden:
+
+```sh
+gh repo create matzem79/home-assistant-energy-costs --private --description "Independent import and export electricity cost accounting for Home Assistant"
 git push -u origin main
 ```
 
-Existiert das Repository bereits, reicht:
+Soll das Repository direkt **öffentlich** sein, beim Erstellen `--public` statt
+`--private` verwenden. Nur eine der Varianten ausführen. Ein normaler Push legt
+ein fehlendes GitHub-Repository nicht automatisch an.
+
+Alternativ das Repository auf der GitHub-Webseite mit Owner `matzem79` und Namen
+`home-assistant-energy-costs` **leer** anlegen: dort weder README noch Lizenz noch
+`.gitignore` erzeugen lassen, da diese Dateien bereits lokal committed sind.
+Danach reicht `git push -u origin main`. `origin` nicht erneut hinzufügen.
+
+Existiert das Repository inzwischen bereits, vor dem Push prüfen:
 
 ```sh
-git push -u origin main
+gh repo view matzem79/home-assistant-energy-costs --json nameWithOwner,url,isPrivate
 ```
 
-Nur einen der beiden Wege verwenden. Das Ziel von `origin` vor dem Push prüfen. Die vorhandene Tests-Action läuft
-bei Push und Pull Request.
+Nach erfolgreichem Push:
+
+```sh
+git status -sb
+gh run list --limit 5
+```
+
+Die Tests-Action läuft bei Push und Pull Request. Ein Push von `main` allein
+erstellt keinen Release. Bis hierhin muss kein Tag angelegt werden.
 
 ## Release vorbereiten
 

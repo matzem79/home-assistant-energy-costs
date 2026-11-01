@@ -9,6 +9,7 @@
 - Tag-Workflow prüft Version und Tests und erstellt einen GitHub-Release-Entwurf mit Installationspaket.
 - Lokale macOS-Dateien und Build-Ausgaben von Git ausgeschlossen.
 - Iconanzeige nach manueller Installation in HA bestätigt; Hinweise zu Browsercache und Update ohne Löschen der Integration dokumentiert.
+- HTTPS-Remote und lokale GitHub-CLI-Anmeldung für den ersten Push vorbereitet; Anleitung zum Anlegen eines neuen, leeren GitHub-Repositories ergänzt.
 - 67 isolierte Tests; kein GitHub-Push oder Release ausgeführt.
 
 ## 0.2.2 — lokal vorbereitet
