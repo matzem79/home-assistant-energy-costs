@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Energy costs and tariffs",
-        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete.",
+        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete. History import uses long-term statistics from each meter’s billing start and replaces existing energy for that direction. Set tariff validity accordingly. An opening balance is ignored when the full period is imported. Missing statistics are marked incomplete. The optional export credit start excludes earlier monthly payouts; the billing year and earned revenue stay independent. Leave blank to count from tracking/billing start as before.",
         "data": {
           "import_entity": "Grid import counter",
           "export_entity": "Grid export counter (optional)",
@@ -16,7 +16,9 @@
           "import_billing_start": "Import billing-year start",
           "export_billing_start": "Export billing-year start",
           "import_opening_balance": "Opening import balance at tracking start (optional)",
-          "export_opening_balance": "Opening export balance at tracking start (optional)"
+          "export_opening_balance": "Opening export balance at tracking start (optional)",
+          "import_history": "Import historical meter data from each billing start",
+          "export_payment_start": "Count monthly export credits from (optional)"
         }
       }
     },
@@ -34,7 +36,7 @@
     "step": {
       "init": {
         "title": "Energy costs and tariffs",
-        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete.",
+        "description": "Import and export are tracked separately. Enter prices in the shown currency (e.g. 0.30 for 30 cents/kWh in EUR). An empty effective date means today. The tariff at the same date is replaced; other tariff periods remain. Backdated prices recalculate recorded days. Monthly advances/credits are assumed paid on the billing-start day each month. Positive opening balance means credit in your favour. Without an opening balance a partially observed billing year is marked incomplete. History import uses long-term statistics from each meter’s billing start and replaces existing energy for that direction. Set tariff validity accordingly. An opening balance is ignored when the full period is imported. Missing statistics are marked incomplete. The optional export credit start excludes earlier monthly payouts; the billing year and earned revenue stay independent. Leave blank to count from tracking/billing start as before.\n\nSaved tariffs ({tariff_count}) — {currency}:\n\n| Valid from | Import/kWh | Export/kWh | Fee/month | Advance/month | Export credit/month |\n| --- | --- | --- | --- | --- | --- |\n{tariff_rows}",
         "data": {
           "import_entity": "Grid import counter",
           "export_entity": "Grid export counter (optional)",
@@ -47,7 +49,9 @@
           "import_billing_start": "Import billing-year start",
           "export_billing_start": "Export billing-year start",
           "import_opening_balance": "Opening import balance at tracking start (optional)",
-          "export_opening_balance": "Opening export balance at tracking start (optional)"
+          "export_opening_balance": "Opening export balance at tracking start (optional)",
+          "import_history": "Import historical meter data from each billing start",
+          "export_payment_start": "Count monthly export credits from (optional)"
         }
       }
     },

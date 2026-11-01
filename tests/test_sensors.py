@@ -64,6 +64,16 @@ class SensorTests(unittest.IsolatedAsyncioTestCase):
         self.runtime.ledger.started += 3600
         self.assertFalse(sensor.extra_state_attributes["period_complete"])
 
+    async def test_export_advances_expose_80_and_payment_details(self):
+        self.runtime.ledger.started = at("2026-01-01T00:00:00+01:00")
+        self.runtime.settings.update(export_billing_start="2026-01-01", export_payment_start="2026-04-01")
+        self.runtime.settings["tariffs"][0]["monthly_export_credit"] = 10
+        sensor = namespace["SettlementSensor"](self.runtime, "export", "advances")
+        self.assertEqual(sensor.native_value, 80)
+        self.assertEqual(sensor.extra_state_attributes["payment_start"], "2026-04-01")
+        self.assertEqual(len(sensor.extra_state_attributes["payment_schedule"]), 8)
+        self.assertEqual(sensor.extra_state_attributes["tariff_count"], 1)
+
     async def test_unknown_price_has_incomplete_cost_attribute(self):
         self.runtime.settings["tariffs"] = []
         sensor = namespace["EnergyCostSensor"](self.runtime, "import_cost", "total")

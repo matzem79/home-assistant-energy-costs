@@ -118,6 +118,32 @@ class FlowTests(unittest.IsolatedAsyncioTestCase):
         merged = {**initial, **changed}
         self.assertIsNone(merged["import_opening_balance"])
 
+    async def test_payment_start_saved_shown_validated_and_clearable(self):
+        values = dict(self.input, export_payment_start="2026-04-01")
+        saved = namespace["updated_settings"]({}, values, "EUR")
+        self.assertEqual(saved["export_payment_start"], "2026-04-01")
+        fields = namespace["make_schema"](saved, "EUR")
+        marker = next(m for m in fields if m.key == "export_payment_start")
+        self.assertEqual(marker.kwargs["description"]["suggested_value"], "2026-04-01")
+        self.assertIn("export_payment_start", namespace["validate_input"](self.hass, dict(values, export_payment_start="2026-02-30")))
+        cleared = namespace["updated_settings"](saved, self.input, "EUR")
+        self.assertIsNone(cleared["export_payment_start"])
+
+    async def test_options_display_all_tariffs_and_count(self):
+        initial = namespace["updated_settings"]({}, dict(self.input, valid_from="2026-01-01", monthly_export_credit=0), "EUR")
+        current = namespace["updated_settings"](initial, dict(self.input, valid_from="2026-04-01", monthly_export_credit=10), "EUR")
+        flow = namespace["EnergyCostsOptionsFlow"]()
+        flow.hass = self.hass
+        flow.config_entry = SimpleNamespace(data=initial, options=current)
+        result = await flow.async_step_init()
+        overview = result["description_placeholders"]
+        self.assertEqual(overview["tariff_count"], "2")
+        self.assertEqual(overview["currency"], "EUR")
+        self.assertIn("2026-01-01", overview["tariff_rows"])
+        self.assertIn("2026-04-01", overview["tariff_rows"])
+        self.assertTrue(overview["tariff_rows"].splitlines()[0].endswith("| 0 |"))
+        self.assertTrue(overview["tariff_rows"].splitlines()[1].endswith("| 10 |"))
+
     async def test_export_optional(self):
         values = dict(self.input)
         values.pop("export_entity")

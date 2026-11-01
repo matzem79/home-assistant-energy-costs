@@ -36,6 +36,9 @@ def make_schema(settings, currency):
         key = f"{direction}_opening_balance"
         schema[vol.Optional(key, description={"suggested_value": settings[key]} if settings.get(key) is not None else {})] = selector.NumberSelector(
             selector.NumberSelectorConfig(min=-1000000, max=1000000, step="any", mode="box", unit_of_measurement=currency))
+    schema[vol.Optional("export_payment_start", description={"suggested_value": settings["export_payment_start"]}
+                        if settings.get("export_payment_start") else {})] = selector.DateSelector()
+    schema[vol.Optional("import_history", default=settings.get("import_history", False))] = bool
     return vol.Schema(schema)
 
 
@@ -58,7 +61,7 @@ def validate_input(hass, user_input):
         value = user_input.get(key)
         if not isinstance(value, (float, int)) or not isfinite(value) or (key not in ("import_price", "export_price") and value < 0):
             errors[key] = "invalid_price"
-    for key in ("valid_from", "import_billing_start", "export_billing_start"):
+    for key in ("valid_from", "import_billing_start", "export_billing_start", "export_payment_start"):
         if user_input.get(key):
             try:
                 date.fromisoformat(user_input[key])
@@ -77,6 +80,8 @@ def updated_settings(previous, user_input, currency):
     tariff["valid_from"] = effective
     result = {"import_entity": user_input["import_entity"], "export_entity": user_input.get("export_entity"),
               "currency": previous.get("currency", currency),
+              "import_history": user_input.get("import_history", previous.get("import_history", False)),
+              "export_payment_start": user_input.get("export_payment_start") or None,
               "tariffs": with_tariff(previous.get("tariffs", []), tariff)}
     for direction in ("import", "export"):
         key = f"{direction}_billing_start"
@@ -84,6 +89,14 @@ def updated_settings(previous, user_input, currency):
         key = f"{direction}_opening_balance"
         result[key] = float(user_input[key]) if user_input.get(key) is not None else None
     return result
+
+
+def tariff_overview(settings):
+    """Expose every saved tariff in the options form, in a fixed column order."""
+    history = sorted(settings.get("tariffs", []), key=lambda t: t["valid_from"])
+    rows = [" | ".join([t["valid_from"], *(f"{t.get(k, 0):g}" for k in PRICE_KEYS)]) for t in history]
+    return {"tariff_count": str(len(history)), "currency": settings["currency"],
+            "tariff_rows": "\n".join("| " + row + " |" for row in rows) or "| — | — | — | — | — | — |"}
 
 
 class EnergyCostsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -113,4 +126,5 @@ class EnergyCostsOptionsFlow(config_entries.OptionsFlow):
             errors = validate_input(self.hass, user_input)
             if not errors:
                 return self.async_create_entry(title="", data=updated_settings(current, user_input, current["currency"]))
-        return self.async_show_form(step_id="init", data_schema=make_schema(current, current["currency"]), errors=errors)
+        return self.async_show_form(step_id="init", data_schema=make_schema(current, current["currency"]), errors=errors,
+                                    description_placeholders=tariff_overview(current))

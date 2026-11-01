@@ -1,7 +1,8 @@
 """Observe selected meters and persist independent cost accounting."""
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
+import logging
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import callback
@@ -11,6 +12,9 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .ledger import Ledger, energy_value
+from .history import reconstruct
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Runtime:
@@ -30,6 +34,64 @@ class Runtime:
             for direction in ("import", "export"):
                 if saved.get("sources", {}).get(direction) != self.settings.get(f"{direction}_entity"):
                     self.ledger.last[direction] = None
+                    self.ledger.history.pop(direction, None)
+
+        if self.settings.get("import_history"):
+            await self.import_history()
+
+    async def import_history(self):
+        # Recorder owns the database executor. Never query it on the event loop.
+        try:
+            from homeassistant.components.recorder import get_instance
+            from homeassistant.components.recorder.statistics import statistics_during_period
+            recorder = get_instance(self.hass)
+            if not await recorder.async_db_ready:
+                raise KeyError("Recorder database unavailable")
+        except Exception:
+            _LOGGER.warning("Historical energy import requires an available Recorder database")
+            for direction in ("import", "export"):
+                if self.settings.get(f"{direction}_entity"):
+                    previous = self.ledger.history.get(direction, {})
+                    self.ledger.history[direction] = dict(previous, status="unavailable", complete=False)
+            return
+        for direction in ("import", "export"):
+            entity_id = self.settings.get(f"{direction}_entity")
+            if not entity_id:
+                continue
+            begin = self.ledger.midnight(date.fromisoformat(self.settings[f"{direction}_billing_start"]))
+            signature = [entity_id, begin]
+            previous = self.ledger.history.get(direction, {})
+            if previous.get("signature") == signature and previous.get("complete") and previous.get("version") == 2:
+                continue
+            now = dt_util.utcnow()
+            if begin >= now.timestamp():
+                continue
+            try:
+                rows = await recorder.async_add_executor_job(
+                    statistics_during_period, self.hass,
+                    dt_util.utc_from_timestamp(begin - timedelta(days=31).total_seconds()), now,
+                    {entity_id}, "hour", {"energy": "kWh"}, {"sum", "state"})
+                # Sample after the query so the live meter is never older than its statistics.
+                now = dt_util.utcnow()
+                current = energy_value(self.hass.states.get(entity_id))
+                imported = reconstruct(self.hass.config.time_zone, direction,
+                                       rows.get(entity_id, []), begin, now.timestamp(), current)
+            except Exception:  # A history failure must not disable live accounting.
+                self.ledger.history[direction] = dict(previous, status="error", complete=False)
+                _LOGGER.exception("Unable to import energy history for %s", entity_id)
+                continue
+            if imported is None:
+                self.ledger.history[direction] = dict(previous, status="unavailable", complete=False)
+                _LOGGER.warning("No usable long-term energy statistics for %s", entity_id)
+                continue
+            # Replace this direction atomically, including today's live tail.
+            for bucket in self.ledger.energy.values():
+                bucket[direction] = 0.0
+            for day, bucket in imported.energy.items():
+                self.ledger.energy.setdefault(day, {"import": 0.0, "export": 0.0})[direction] = bucket[direction]
+            self.ledger.last[direction] = imported.last[direction]
+            self.ledger.history[direction] = dict(imported.history[direction], signature=signature)
+        await self.save()
 
     def snapshot(self):
         return {"ledger": self.ledger.dump(),

@@ -1,7 +1,7 @@
 {
   "domain": "energy_costs",
   "name": "Energy Costs",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "config_flow": true,
   "integration_type": "service",
   "iot_class": "calculated",
@@ -10,5 +10,8 @@
   ],
   "documentation": "https://github.com/matzem79/home-assistant-energy-costs",
   "issue_tracker": "https://github.com/matzem79/home-assistant-energy-costs/issues",
-  "requirements": []
+  "requirements": [],
+  "after_dependencies": [
+    "recorder"
+  ]
 }

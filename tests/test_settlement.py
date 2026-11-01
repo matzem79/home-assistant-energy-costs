@@ -85,6 +85,43 @@ class SettlementTests(unittest.TestCase):
         self.ledger.started = at("2026-01-31T00:00:00+01:00")
         self.assertEqual(self.ledger.settlement("import", at("2026-02-28T12:00:00+01:00"), self.settings)["advances"], 200)
 
+    def test_export_credits_january_cycle_april_payments_110_to_80(self):
+        self.ledger.started = at("2026-01-01T00:00:00+01:00")
+        self.settings["export_billing_start"] = "2026-01-01"
+        self.settings["tariffs"][0]["monthly_export_credit"] = 10
+        self.ledger.energy = {"2026-02-01": {"import": 0, "export": 100},
+                              "2026-04-01": {"import": 0, "export": 200}}
+        self.assertEqual(self.ledger.settlement("export", self.now, self.settings)["advances"], 110)
+        self.settings["export_payment_start"] = "2026-04-01"
+        result = self.ledger.settlement("export", self.now, self.settings)
+        self.assertEqual(result["advances"], 80)
+        self.assertEqual(result["cycle_start"], "2026-01-01")
+        self.assertEqual(result["actual"], 24)
+        self.assertEqual(result["balance"], -56)
+        self.assertEqual(len(result["payment_schedule"]), 8)
+        self.assertEqual(result["payment_schedule"][0]["date"], "2026-04-01")
+        self.assertEqual(result["payment_schedule"][-1]["date"], "2026-11-01")
+        self.assertEqual(result["tariff_count"], 1)
+        self.assertEqual(result["tariffs"], self.settings["tariffs"])
+        self.assertEqual(self.ledger.settlement("import", self.now, self.settings)["advances"], 100)
+
+    def test_export_payment_start_future_and_next_cycle(self):
+        self.ledger.started = at("2026-01-01T00:00:00+01:00")
+        self.settings["export_billing_start"] = "2026-01-01"
+        self.settings["export_payment_start"] = "2026-12-01"
+        self.assertEqual(self.ledger.settlement("export", self.now, self.settings)["advances"], 0)
+        self.settings["export_payment_start"] = "2026-04-01"
+        result = self.ledger.settlement("export", at("2027-02-01T00:00:00+01:00"), self.settings)
+        self.assertEqual(result["advances"], 100)
+
+    def test_two_tariffs_without_payment_start_count_80(self):
+        self.ledger.started = at("2026-01-01T00:00:00+01:00")
+        self.settings["export_billing_start"] = "2026-01-01"
+        self.settings["tariffs"][0]["monthly_export_credit"] = 0
+        april = dict(self.settings["tariffs"][0], valid_from="2026-04-01", monthly_export_credit=10)
+        self.settings["tariffs"].append(april)
+        self.assertEqual(self.ledger.settlement("export", self.now, self.settings)["advances"], 80)
+
     def test_leap_year_anniversary(self):
         self.assertEqual(Ledger.cycle_start("2024-02-29", date(2027, 3, 1)), date(2027, 2, 28))
 

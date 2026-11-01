@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Stromkosten und Tarife",
-        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert.",
+        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo oder vollständigen Historienimport bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert. Historienimport: Langzeitstatistiken werden je Zähler ab dessen Abrechnungsbeginn übernommen; vorhandene Energiemengen dieser Richtung werden ersetzt. Preise müssen ab dem gewünschten Datum gelten. Bei vollständiger Historie wird ein Anfangssaldo nicht angewendet. Fehlende Statistiken bleiben als unvollständig erkennbar. Das optionale Startdatum für Einspeisegutschriften schließt frühere Monatsauszahlungen aus; Abrechnungsjahr und verdiente Vergütung bleiben davon unabhängig. Leer zählt wie bisher ab Erfassungs-/Abrechnungsbeginn.",
         "data": {
           "import_entity": "Zähler Netzbezug",
           "export_entity": "Zähler Einspeisung (optional)",
@@ -16,7 +16,9 @@
           "import_billing_start": "Beginn Abrechnungsjahr Bezug",
           "export_billing_start": "Beginn Abrechnungsjahr Einspeisung",
           "import_opening_balance": "Anfangssaldo Bezug bei Erfassungsbeginn (optional)",
-          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)"
+          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)",
+          "import_history": "Historische Zählerdaten ab Abrechnungsbeginn importieren",
+          "export_payment_start": "Monatliche Einspeisegutschriften zählen ab (optional)"
         }
       }
     },
@@ -34,7 +36,7 @@
     "step": {
       "init": {
         "title": "Stromkosten und Tarife",
-        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert.",
+        "description": "Bezug und Einspeisung werden separat erfasst. Preise in der angezeigten Währung eingeben (z. B. 0,30 für 30 ct/kWh bei EUR). Ein leeres Gültigkeitsdatum bedeutet heute. Ein vorhandener Tarif am selben Datum wird ersetzt; andere Tarifzeiträume bleiben erhalten. Rückdatierte Preise berechnen bereits erfasste Tage neu. Abschläge/Gutschriften werden monatlich am Tag des Abrechnungsbeginns als planmäßig gebucht angenommen. Positiver Anfangssaldo = Guthaben für dich. Ohne Anfangssaldo oder vollständigen Historienimport bleibt ein bereits laufendes Abrechnungsjahr als unvollständig markiert. Historienimport: Langzeitstatistiken werden je Zähler ab dessen Abrechnungsbeginn übernommen; vorhandene Energiemengen dieser Richtung werden ersetzt. Preise müssen ab dem gewünschten Datum gelten. Bei vollständiger Historie wird ein Anfangssaldo nicht angewendet. Fehlende Statistiken bleiben als unvollständig erkennbar. Das optionale Startdatum für Einspeisegutschriften schließt frühere Monatsauszahlungen aus; Abrechnungsjahr und verdiente Vergütung bleiben davon unabhängig. Leer zählt wie bisher ab Erfassungs-/Abrechnungsbeginn.\n\nGespeicherte Tarife ({tariff_count}) — {currency}:\n\n| Gültig ab | Bezug/kWh | Einspeisung/kWh | Grundgebühr/Monat | Abschlag/Monat | Gutschrift/Monat |\n| --- | --- | --- | --- | --- | --- |\n{tariff_rows}",
         "data": {
           "import_entity": "Zähler Netzbezug",
           "export_entity": "Zähler Einspeisung (optional)",
@@ -47,7 +49,9 @@
           "import_billing_start": "Beginn Abrechnungsjahr Bezug",
           "export_billing_start": "Beginn Abrechnungsjahr Einspeisung",
           "import_opening_balance": "Anfangssaldo Bezug bei Erfassungsbeginn (optional)",
-          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)"
+          "export_opening_balance": "Anfangssaldo Einspeisung bei Erfassungsbeginn (optional)",
+          "import_history": "Historische Zählerdaten ab Abrechnungsbeginn importieren",
+          "export_payment_start": "Monatliche Einspeisegutschriften zählen ab (optional)"
         }
       }
     },

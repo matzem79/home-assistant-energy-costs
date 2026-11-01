@@ -36,9 +36,16 @@ class Ledger:
         self.last = {"import": None, "export": None}
         self.energy = {}
         self.resets = {"import": 0, "export": 0}
+        self.history = {}
+
+    def tracking_since(self, direction):
+        return self.history.get(direction, {}).get("tracking_since", self.started)
+
+    def history_complete(self, direction):
+        return self.history.get(direction, {}).get("complete", True)
 
     def dump(self):
-        return {"started": self.started, "last": self.last, "energy": self.energy, "resets": self.resets}
+        return {"started": self.started, "last": self.last, "energy": self.energy, "resets": self.resets, "history": self.history}
 
     def restore(self, data):
         if isinstance(data, dict):
@@ -46,6 +53,7 @@ class Ledger:
             self.last.update(data.get("last", {}))
             self.energy = data.get("energy", {})
             self.resets.update(data.get("resets", {}))
+            self.history = data.get("history", {})
 
     def midnight(self, day):
         return datetime.combine(day, time.min, self.zone).timestamp()
@@ -101,9 +109,10 @@ class Ledger:
         matches = lambda day: (since is None or day >= since) and (period in ("total", "year") or (day == today if period == "day" else day[:7] == today[:7]))
         total, missing = 0.0, 0.0
         if category == "standing_charge":
-            if self.started is None:
+            started = self.tracking_since("import")
+            if started is None:
                 return total, missing
-            for day, left, right in self.segments(max(self.started, self.midnight(date.fromisoformat(since))) if since else self.started, now):
+            for day, left, right in self.segments(max(started, self.midnight(date.fromisoformat(since))) if since else started, now):
                 key = day.isoformat()
                 if not matches(key):
                     continue
@@ -155,9 +164,12 @@ class Ledger:
             actual += fee
             missing += fee_missing
         payments, missing_payments = 0.0, 0
+        payment_start = settings.get("export_payment_start") if direction == "export" else None
+        schedule = []
+        started = self.tracking_since(direction)
         # Only scheduled instalments observed since tracking began are included;
         # earlier costs/payments belong in an optional opening balance.
-        if self.started is not None:
+        if started is not None:
             index = 0
             while True:
                 month_index = start.year * 12 + start.month - 1 + index
@@ -166,21 +178,37 @@ class Ledger:
                 pay_day = date(year, month, min(start.day, calendar.monthrange(year, month)[1]))
                 if pay_day > today or index >= 12:
                     break
-                if self.midnight(pay_day) >= self.started:
+                if self.midnight(pay_day) >= started and (payment_start is None or pay_day >= date.fromisoformat(payment_start)):
                     tariff = self.tariff_on(history, pay_day.isoformat())
                     if tariff is None:
                         missing_payments += 1
                     else:
                         key = "monthly_import_payment" if direction == "import" else "monthly_export_credit"
-                        payments += tariff.get(key, 0.0)
+                        amount = tariff.get(key, 0.0)
+                        payments += amount
+                        schedule.append({"date": pay_day.isoformat(), "amount": amount,
+                                         "tariff_valid_from": tariff["valid_from"]})
                 index += 1
         opening_key = f"{direction}_opening_balance"
-        partial = self.started is None or self.started > self.midnight(start)
+        partial = started is None or started > self.midnight(start)
         opening = (settings.get(opening_key) or 0.0) if partial else 0.0
-        complete = (not partial or settings.get(opening_key) is not None) and missing < 1e-9 and missing_payments == 0
+        complete = (not partial or settings.get(opening_key) is not None) and missing < 1e-9 and missing_payments == 0 and self.history_complete(direction)
+        reasons = list(self.history.get(direction, {}).get("incomplete_reasons", []))
+        if not self.history_complete(direction) and not reasons:
+            reasons.append("history_unavailable_or_incomplete")
+        if partial and settings.get(opening_key) is None:
+            reasons.append("missing_period_start")
+        if missing >= 1e-9:
+            reasons.append("missing_tariff")
+        if missing_payments:
+            reasons.append("missing_payment_tariff")
         balance = opening + (payments - actual if direction == "import" else actual - payments)
         status = "incomplete" if not complete else "credit" if balance > 0.005 else (
             "additional_payment" if direction == "import" else "repayment") if balance < -0.005 else "balanced"
         return {"balance": balance, "status": status, "advances": payments, "actual": actual,
-                "cycle_start": start.isoformat(), "complete": complete,
-                "opening_balance": opening, "scheduled_payments": True, "tracking_since": self.started}
+                "cycle_start": start.isoformat(), "complete": complete, "incomplete_reasons": reasons,
+                "opening_balance": opening, "scheduled_payments": True, "tracking_since": started,
+                "history_import": self.history.get(direction),
+                "payment_start": payment_start, "payment_schedule": schedule,
+                "tariff_count": len(history),
+                "tariffs": sorted((dict(t) for t in history), key=lambda t: t["valid_from"])}

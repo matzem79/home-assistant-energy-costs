@@ -62,12 +62,15 @@ class EnergyCostSensor(SensorEntity):
         direction = "import" if self.category.startswith("import") else "export"
         now = dt_util.now()
         boundary = self.cycle_start if self.period == "year" else now.date().replace(day=1) if self.period == "month" else now.date()
-        complete = self.runtime.ledger.started is not None and (
-            self.period == "total" or self.runtime.ledger.started <= self.runtime.ledger.midnight(boundary))
+        direction = "import" if self.category == "standing_charge" else direction
+        started = self.runtime.ledger.tracking_since(direction)
+        complete = self.runtime.ledger.history_complete(direction) and started is not None and (
+            self.period == "total" or started <= self.runtime.ledger.midnight(boundary))
         return {"period_complete": complete, ("unpriced_days" if self.category == "standing_charge" else "unpriced_energy_kwh"): round(missing, 6), "cost_complete": missing < 1e-9,
                 "source_available": self.runtime.source_available.get(direction) if self.category != "standing_charge" else None,
                 "counter_resets": self.runtime.ledger.resets.get(direction) if self.category != "standing_charge" else None,
-                "tracking_since": dt_util.utc_from_timestamp(self.runtime.ledger.started).isoformat() if self.runtime.ledger.started is not None else None}
+                "tracking_since": dt_util.utc_from_timestamp(started).isoformat() if started is not None else None,
+                "history_import": self.runtime.ledger.history.get(direction)}
 
 
 class SettlementSensor(EnergyCostSensor):
